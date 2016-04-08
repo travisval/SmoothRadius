@@ -7,11 +7,34 @@ using ESRI.ArcGIS.GeoDatabaseExtensions;
 using System.Runtime.InteropServices;
 using ESRI.ArcGIS.Editor;
 using ESRI.ArcGIS.esriSystem;
+using ESRI.ArcGIS.Geometry;
 
 namespace SmoothRadiusAddin
 {
+    public enum RelativeOrientation { ToA_ToB = 1, ToA_FromB = 3, FromA_ToB = 2, FromA_FromB = 4, Same = 5, Reverse = 6, Parallel = 7, Disjoint = 8, 
+        ACoversB_Same, ACoversB_Reverse, BCoversA_Same, BCoversA_Reverse, Overlapping_Same, Overlapping_Reverse }
+
     public static class FabricFunctions
     {
+        public const string RadiusFieldName = "Radius";
+        public const string CenterpointIDFieldName = "CenterPointID";
+        public const string ParcelIDFieldName = "ParcelID";
+        public const string FromPointFieldName = "FromPointID";
+        public const string ToPointFieldName = "ToPointID";
+        public const string SystemStartDateFieldName = "SystemStartDate";
+
+        public const string CategoryFieldName = "Category";
+        public const string SequenceFieldName = "Sequence";
+        public const string TypeFieldName = "Type";
+        public const string HistoricalFieldName = "Historical";
+        public const string LineParametersFieldName = "LineParameters";
+        public const string DensifyTypeName = "DensifyType";
+
+        public const string DistanceFieldName = "Distance";
+        public const string ArcLengthFieldName = "ArcLength";
+
+        public const string BearingFieldName = "Bearing";
+
         /// <summary>
         /// Safely accesses a value, accounting for DBNull values
         /// </summary>
@@ -307,5 +330,208 @@ namespace SmoothRadiusAddin
             return true;
         }
 
+
+        public static RelativeOrientation GetRelativeOrientation(IPolyline polylineA, IPolyline polylineB)
+        {
+            //check to see if the segments overlap
+
+            double line_to = ((IProximityOperator)polylineA).ReturnDistance(polylineB.ToPoint);
+            double line_from = ((IProximityOperator)polylineA).ReturnDistance(polylineB.FromPoint);
+
+            double to_line = ((IProximityOperator)polylineB).ReturnDistance(polylineA.ToPoint);
+            double from_line = ((IProximityOperator)polylineB).ReturnDistance(polylineA.FromPoint);
+
+            //fully overlap
+            if (line_to < 0.005 && line_from < 0.005 && to_line < 0.005 && from_line < 0.005)
+            {
+                //if they do, find the relative orientation and then return Same or Reverse
+                RelativeOrientation orientation = GetRelativeOrientation_ignoreSame(polylineA, polylineB);
+                if (orientation == RelativeOrientation.ToA_ToB || orientation == RelativeOrientation.FromA_FromB)
+                    return RelativeOrientation.Same;
+                if (orientation == RelativeOrientation.FromA_ToB || orientation == RelativeOrientation.ToA_FromB)
+                    return RelativeOrientation.Reverse;
+
+                throw new Exception("Invalid relative same/revers for overlapping segments returend");
+            }
+            if (line_to < 0.005 && line_from < 0.005)
+            {
+                //if they do, find the relative orientation and then return Same or Reverse
+                RelativeOrientation orientation = GetRelativeOrientation_ignoreSame(polylineA, polylineB);
+                if (orientation == RelativeOrientation.ToA_ToB || orientation == RelativeOrientation.FromA_FromB)
+                    return RelativeOrientation.ACoversB_Same;
+                if (orientation == RelativeOrientation.FromA_ToB || orientation == RelativeOrientation.ToA_FromB)
+                    return RelativeOrientation.ACoversB_Reverse;
+
+                throw new Exception("Invalid relative same/revers for overlapping segments returend");
+            }
+            if (to_line < 0.005 && from_line < 0.005)
+            {
+                //if they do, find the relative orientation and then return Same or Reverse
+                RelativeOrientation orientation = GetRelativeOrientation_ignoreSame(polylineA, polylineB);
+                if (orientation == RelativeOrientation.ToA_ToB || orientation == RelativeOrientation.FromA_FromB)
+                    return RelativeOrientation.BCoversA_Same;
+                if (orientation == RelativeOrientation.FromA_ToB || orientation == RelativeOrientation.ToA_FromB)
+                    return RelativeOrientation.BCoversA_Reverse;
+
+                throw new Exception("Invalid relative same/revers for overlapping segments returend");
+            }
+            else if ((line_to < 0.005 && to_line < 0.005) || (line_from < 0.005 && from_line < 0.005))
+            {
+                return RelativeOrientation.Overlapping_Reverse;
+            }
+            else if ((line_from < 0.005 && to_line < 0.005) || (line_to < 0.005 && from_line < 0.005))
+            {
+                return RelativeOrientation.Overlapping_Same;
+            }
+            else if (line_to > 0.005 && line_from > 0.005 && to_line > 0.005 && line_from > 0.005)
+            {
+                return RelativeOrientation.Disjoint;
+            }
+            //if they don't, just get the relative orientation
+            return GetRelativeOrientation_ignoreSame(polylineA, polylineB);
+        }
+        private static RelativeOrientation GetRelativeOrientation_ignoreSame(IPolyline polylineA, IPolyline polylineB)
+        {
+            RelativeOrientation ret = RelativeOrientation.ToA_ToB;
+            double min = 0;
+
+            double To_To = min = ((IProximityOperator)polylineA.ToPoint).ReturnDistance(polylineB.ToPoint);
+            if (To_To < 0.005)
+                return RelativeOrientation.ToA_ToB;
+
+
+            double From_From = ((IProximityOperator)polylineA.FromPoint).ReturnDistance(polylineB.FromPoint);
+            if (From_From < 0.005)
+            {
+                return RelativeOrientation.FromA_FromB;
+            }
+            else if (From_From < To_To)
+            {
+                min = From_From;
+                ret = RelativeOrientation.FromA_FromB;
+            }
+
+
+            double From_To = ((IProximityOperator)polylineA.ToPoint).ReturnDistance(polylineB.FromPoint);
+            if (From_To < 0.005)
+            {
+                return RelativeOrientation.ToA_FromB;
+            }
+            if (From_To < min)
+            {
+                ret = RelativeOrientation.ToA_FromB;
+                min = From_To;
+            }
+
+
+            double To_From = ((IProximityOperator)polylineA.FromPoint).ReturnDistance(polylineB.ToPoint);
+            if (To_From < min)
+            {
+                ret = RelativeOrientation.FromA_ToB;
+            }
+
+            return (RelativeOrientation)ret;
+        }
+
+        public static double GetSlopeAtStartPoint(IPolyline geometry)
+        {
+            return GetSlopeAt(geometry, esriSegmentExtension.esriExtendAtFrom, 0.0);
+        }
+        public static double GetSlopeAtEndPoint(IPolyline geometry)
+        {
+            return GetSlopeAt(geometry, esriSegmentExtension.esriExtendAtTo, 100.0);
+        }
+        public static double GetSlopeAt(IPolyline geometry, esriSegmentExtension extension, double percentageAlongLine)
+        {
+            ILine line = new ESRI.ArcGIS.Geometry.Line();
+            geometry.QueryTangent(extension, percentageAlongLine, true, 1.0, line);
+            return line.Angle;
+        }
+
+        public static double ReverseAngle(double angle)
+        {
+            return (angle > 0) ? angle - Math.PI : angle + Math.PI;
+        }
+
+        public static double DiffAngles(double angleA, double angleB)
+        {
+            IVector3D vectorA = new Vector3D() as IVector3D;
+            vectorA.PolarSet(angleA, 0, 1);
+
+            IVector3D vectorB = new Vector3D() as IVector3D;
+            vectorB.PolarSet(angleB, 0, 1);
+
+            return Math.Acos(vectorA.DotProduct(vectorB));
+        }
+
+        public static double ToRadians(double degrees)
+        {
+            return degrees / (180 / Math.PI);
+        }
+        public static double toDegrees(double radians)
+        {
+            return radians * (180 / Math.PI);
+        }
+
+        public static int GetNextSequenceID(IFeatureClass linesFeatureClass, int parcelID, Dictionary<int, int> idCache = null)
+        {
+            IFeatureCursor maxCursor = null;
+            try
+            {
+                if (idCache != null && idCache.ContainsKey(parcelID))
+                    return idCache[parcelID]++;
+
+                int maxSequence = 0;
+                maxCursor = linesFeatureClass.Search(new QueryFilter()
+                {
+                    SubFields = String.Format("{0}, {1}, {2}", linesFeatureClass.OIDFieldName, SequenceFieldName, ParcelIDFieldName),
+                    WhereClause = String.Format("{0} = {1}", ParcelIDFieldName, parcelID)
+                }, true);
+
+                int seqenceIdx = maxCursor.Fields.FindField(SequenceFieldName);
+
+                IRow maxFeat = null;
+                while ((maxFeat = maxCursor.NextFeature()) != null)
+                {
+                    maxSequence = Math.Max((int)maxFeat.get_Value(seqenceIdx), maxSequence);
+                    Marshal.ReleaseComObject(maxFeat);
+                }
+                Marshal.ReleaseComObject(maxCursor);
+
+                if (maxSequence <= 0)
+                    throw new Exception("Failed to find max sequence value");
+
+                maxSequence++;
+                if (idCache != null)
+                    idCache.Add(parcelID, maxSequence);
+                return maxSequence;
+            }
+            finally
+            {
+                if(maxCursor != null)
+                    Marshal.ReleaseComObject(maxCursor);
+            }
+        }
+        public static IGeometry CreateNilGeometry(IFeatureClass linesFeatureClass)
+        {
+            // Create a Nil geometry
+            IGeometryFactory3 geometryFactory = new GeometryEnvironmentClass();
+            IGeometry geometry = new PolylineClass();
+            geometryFactory.CreateEmptyGeometryByType(linesFeatureClass.ShapeType, out geometry);
+            IGeometryDef geometryDef = linesFeatureClass.Fields.get_Field(linesFeatureClass.FindField(linesFeatureClass.ShapeFieldName)).GeometryDef;
+
+            if (geometryDef.HasZ)
+            {
+                IZAware zAware = (IZAware)(geometry);
+                zAware.ZAware = true;
+            }
+            if (geometryDef.HasM)
+            {
+                IMAware mAware = (IMAware)(geometry);
+                mAware.MAware = true;
+            }
+
+            return geometry;
+        }
     }
 }

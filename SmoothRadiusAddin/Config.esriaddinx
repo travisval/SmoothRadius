@@ -14,7 +14,7 @@
     <ArcMap>
       <Editor>
         <Commands>
-          <Tool id="Esri_Canada_SmoothRadiusAddin_SmoothRadiusTool" class="SmoothRadiusTool" message="Trace a cadastral fabric curve to set it's radius (requires edit session)." caption="Smooth Radius Trace Tool" tip="" category="Parcel Add-ins" image="Images\SmoothRadiusTool.png" onDemand="false">
+          <Tool id="Esri_Canada_SmoothRadiusAddin_SmoothRadiusTool" class="SmoothRadiusTool" message="Trace a cadastral fabric curve to set it's radius (requires edit session)." caption="Smooth Radius Trace Tool" category="Parcel Fabric Add-ins" image="Images\SmoothRadiusTool.png" onDemand="false">
             <Construction>
               <Category>Polyline Construction</Category>
             </Construction>

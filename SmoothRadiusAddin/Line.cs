@@ -6,8 +6,21 @@ using ESRI.ArcGIS.Geometry;
 
 namespace SmoothRadiusAddin
 {
+    class StraightLine : Line
+    {
+        public bool IsForward;
+
+        public double StartAngle, EndAngle;
+
+        public StraightLine(int objectID, int parcelID, IGeometry shape)
+            : base (objectID, false, 0, 0, parcelID, shape)
+        {
+        }
+    }
+
     class Line : System.ComponentModel.INotifyPropertyChanged
     {
+
         public int ObjectID { get; private set; }
         public double Radius { get; private set; }
         public int CenterpointID { get; private set; }
@@ -21,15 +34,30 @@ namespace SmoothRadiusAddin
         public string Warning
         {
             get { return _Warning; }
-            set
+            private set
             {
                 _Warning = value;
-                _ListFontWieght = String.IsNullOrEmpty(value) ? System.Windows.FontWeights.Normal : System.Windows.FontWeights.Bold;
-                RaisePropertyChanges("HasWarning", "Warning");
+                ListFontWieght = String.IsNullOrEmpty(value) ? System.Windows.FontWeights.Normal : System.Windows.FontWeights.Bold;
+                IconVisibility = String.IsNullOrEmpty(value) ? System.Windows.Visibility.Hidden : System.Windows.Visibility.Visible;
+                RaisePropertyChanges("ListFontWieght", "Warning", "IconVisibility");
             }
         }
-        System.Windows.FontWeight _ListFontWieght = System.Windows.FontWeights.Normal;
-        public System.Windows.FontWeight ListFontWieght { get { return _ListFontWieght; } }
+        public void AddWarning(string w)
+        {
+            if (Warning == null)
+                Warning = w;
+            else
+                Warning = string.Concat(Warning, Environment.NewLine, w);
+        }
+        public void ClearWarnings()
+        {
+            Warning = null;
+        }
+
+        public System.Windows.FontWeight ListFontWieght { get; private set; }
+
+        public System.Windows.Visibility IconVisibility { get; private set; }
+
 
         public Line(int objectID, bool isCurve, double radius, int centerpointID, int parcelID, IGeometry shape)
         {
@@ -39,6 +67,9 @@ namespace SmoothRadiusAddin
             this.ParcelID = parcelID;
             this.IsCurve = isCurve;
             this.Shape = shape;
+            
+            ListFontWieght = System.Windows.FontWeights.Normal;
+            IconVisibility = System.Windows.Visibility.Hidden;
         }
 
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;

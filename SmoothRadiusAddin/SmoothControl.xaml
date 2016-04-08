@@ -15,11 +15,14 @@
                 </Grid>
             </StackPanel>
         </Grid>
-        <Expander Margin="5" Header="{Binding WarningCount}">
+        <Expander Margin="5" Header="{Binding}">
             <Expander.HeaderTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Path=., StringFormat=Segment Details ({0} Warnings)}">
-                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Height="16" VerticalAlignment="Center" Margin="5">
+                        <TextBlock Height="16" Text="Segment Details " />
+                        <Image Height="16" Source="Images\Warning.png" Visibility="{Binding WarningVisibility}"/>
+                        <TextBlock Height="16" Text="{Binding WarningCount}" Visibility="{Binding WarningVisibility}"/>
+                    </StackPanel>
                 </DataTemplate>
             </Expander.HeaderTemplate>
             <Grid MinHeight="140">
@@ -27,10 +30,19 @@
                     <ListView ItemsSource="{Binding m_curves}">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="OID" Width="50" DisplayMemberBinding="{Binding ObjectID}" />
-                                <GridViewColumn Header="Radius" Width="75" DisplayMemberBinding="{Binding Radius}" />
-                                <GridViewColumn Header="Centerpoint" Width="75" DisplayMemberBinding="{Binding CenterpointID}" />
-                                <GridViewColumn Header="Is Curve" Width="50" DisplayMemberBinding="{Binding IsCurve}" />
+                                <GridViewColumn Width="25">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image Height="16" Source="Images\Warning.png" Visibility="{Binding IconVisibility}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="OID" Width="40" DisplayMemberBinding="{Binding ObjectID}" />
+                                <GridViewColumn Header="Radius" Width="60" DisplayMemberBinding="{Binding Radius}" />
+                                <GridViewColumn Header="Centerpoint" Width="60" DisplayMemberBinding="{Binding CenterpointID}" />
+                                <GridViewColumn Header="Is Curve" Width="40" DisplayMemberBinding="{Binding IsCurve}" />
                             </GridView>
                         </ListView.View>
                         <ListView.Resources>

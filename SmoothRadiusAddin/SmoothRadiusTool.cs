@@ -163,7 +163,9 @@ namespace SmoothRadiusAddin
                     if (isRadius ^ isCenterpoint)
                         throw new Exception("A feature should have radius and centerpoint information set, or should not have either of the values set.");
 
-                    curves.Add(new Line(feature.OID, isRadius, radius, centerpoint, parcel, feature.ShapeCopy));
+                    curves.Add((isRadius) ? 
+                        new Line(feature.OID, isRadius, radius, centerpoint, parcel, feature.ShapeCopy) :
+                        new StraightLine(feature.OID, parcel, feature.ShapeCopy));
                 }
                 Marshal.ReleaseComObject(cursor);
 

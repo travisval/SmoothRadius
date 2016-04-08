@@ -187,6 +187,9 @@
       <DependentUpon>SmoothDialog.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Warning.png" />
+  </ItemGroup>
   <PropertyGroup>
     <ZipFileExtension>esriAddIn</ZipFileExtension>
     <AddInTargetProduct>Desktop</AddInTargetProduct>
