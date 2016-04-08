@@ -21,6 +21,8 @@ namespace SmoothRadiusAddin
             ((System.Windows.Controls.UserControl)elementHost1.Child).SizeChanged += new System.Windows.SizeChangedEventHandler(SmoothDialog_SizeChanged);
 
             InitialSizeDiff = ((double)this.Height) - elementHost1.Size.Height;
+
+            this.Text = this.Text + String.Concat(" (", ThisAddIn.Version, ")");
         }
 
         void SmoothDialog_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
