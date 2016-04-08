@@ -102,6 +102,7 @@
     </Compile>
     <Compile Include="FabricFunctions.cs" />
     <Compile Include="Line.cs" />
+    <Compile Include="ListViewSort.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

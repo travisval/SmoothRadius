@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" Height="130" Width="300" MinWidth="300">
+             xmlns:u="clr-namespace:Wpf.Util"
+             mc:Ignorable="d" Height="132" Width="300" MinWidth="300">
     <DockPanel>
         <Grid DockPanel.Dock="Top">
             <StackPanel>
@@ -18,19 +19,21 @@
         <Expander Margin="5" Header="{Binding}">
             <Expander.HeaderTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Height="16" VerticalAlignment="Center" Margin="5">
-                        <TextBlock Height="16" Text="Segment Details " />
-                        <Image Height="16" Source="Images\Warning.png" Visibility="{Binding WarningVisibility}"/>
-                        <TextBlock Height="16" Text="{Binding WarningCount}" Visibility="{Binding WarningVisibility}"/>
-                    </StackPanel>
+                    <Grid Height="30" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5">
+                            <TextBlock Text="Segment Details " />
+                            <Image Height="16" Source="Images\Warning.png" Visibility="{Binding WarningVisibility}"/>
+                            <TextBlock Text="{Binding WarningCount}" Visibility="{Binding WarningVisibility}"/>
+                        </StackPanel>
+                    </Grid>
                 </DataTemplate>
             </Expander.HeaderTemplate>
             <Grid MinHeight="140">
                 <ScrollViewer MaxHeight="400">
-                    <ListView ItemsSource="{Binding m_curves}">
+                    <ListView ItemsSource="{Binding m_curves}" SelectionMode="Single"  u:GridViewSort.AutoSort="True">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Width="25">
+                                <GridViewColumn Width="30"  u:GridViewSort.PropertyName="IconVisibility">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -39,10 +42,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="OID" Width="40" DisplayMemberBinding="{Binding ObjectID}" />
-                                <GridViewColumn Header="Radius" Width="60" DisplayMemberBinding="{Binding Radius}" />
-                                <GridViewColumn Header="Centerpoint" Width="60" DisplayMemberBinding="{Binding CenterpointID}" />
-                                <GridViewColumn Header="Is Curve" Width="40" DisplayMemberBinding="{Binding IsCurve}" />
+                                <GridViewColumn Header="OID" Width="40" DisplayMemberBinding="{Binding ObjectID}" u:GridViewSort.PropertyName="ObjectID"/>
+                                <GridViewColumn Header="Radius" Width="60" DisplayMemberBinding="{Binding Radius}"  u:GridViewSort.PropertyName="Radius"/>
+                                <GridViewColumn Header="Centerpoint" Width="65" DisplayMemberBinding="{Binding CenterpointID}" u:GridViewSort.PropertyName="CenterpointID"/>
+                                <GridViewColumn Header="Is Curve" Width="45" DisplayMemberBinding="{Binding IsCurve}" u:GridViewSort.PropertyName="IsCurve"/>
                             </GridView>
                         </ListView.View>
                         <ListView.Resources>
