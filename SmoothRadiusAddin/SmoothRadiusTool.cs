@@ -123,7 +123,8 @@ namespace SmoothRadiusAddin
             try
             {
                 ISnapEnvironment se = (ISnapEnvironment)m_editor;
-                double mapUnitBuffer = se.SnapTolerance;
+                
+                double mapUnitBuffer = Math.Max(1, se.SnapTolerance);
                 if (se.SnapToleranceUnits == esriSnapToleranceUnits.esriSnapTolerancePixels)
                 {
                     ESRI.ArcGIS.Display.IDisplayTransformation dt = ArcMap.Document.ActiveView.ScreenDisplay.DisplayTransformation;
@@ -169,12 +170,19 @@ namespace SmoothRadiusAddin
                 }
                 Marshal.ReleaseComObject(cursor);
 
-                SmoothDialog sd = new SmoothDialog();
-                SmoothContext context = new SmoothContext(m_cadFab, m_editor, curves);
-                sd.SetContext(context);
-                if (sd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                if (curves.Count() > 0)
                 {
-                    context.Update();
+                    SmoothDialog sd = new SmoothDialog();
+                    SmoothContext context = new SmoothContext(m_cadFab, m_editor, curves);
+                    sd.SetContext(context);
+                    if (sd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        context.Update();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No features were found");
                 }
             }
             catch (Exception exx)
