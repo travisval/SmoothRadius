@@ -230,7 +230,7 @@ namespace SmoothRadiusAddin
             List<Line> remaining = new List<Line>(m_curves);
             while (remaining.Count > 0)
             {
-                Line current = m_curves.FirstOrDefault(w => w.IsCurve);
+                Line current = remaining.FirstOrDefault(w => w.IsCurve);
                 if (current == null)
                     throw new Exception("A group of features containing only lines was detected");
 
