@@ -122,20 +122,7 @@ namespace SmoothRadiusAddin
         {
             try
             {
-                ISnapEnvironment se = (ISnapEnvironment)m_editor;
-                
-                double mapUnitBuffer = Math.Max(1, se.SnapTolerance);
-                if (se.SnapToleranceUnits == esriSnapToleranceUnits.esriSnapTolerancePixels)
-                {
-                    ESRI.ArcGIS.Display.IDisplayTransformation dt = ArcMap.Document.ActiveView.ScreenDisplay.DisplayTransformation;
-                    ESRI.ArcGIS.esriSystem.tagRECT deviceRECT = dt.get_DeviceFrame();
-                    int pixelExtent = deviceRECT.right - deviceRECT.left;
-                    IEnvelope env = dt.VisibleBounds;
-                    double realWorldDisplayExtent = env.Width;
-                    double sizeOfOnePixel = realWorldDisplayExtent / pixelExtent;
-                    mapUnitBuffer = se.SnapTolerance * sizeOfOnePixel;
-                }
-                IGeometry queryShape = ((ITopologicalOperator)m_edSketch.Geometry).Buffer(mapUnitBuffer);
+                IGeometry queryShape = ((ITopologicalOperator)m_edSketch.Geometry).Buffer(ArcMap.Document.SearchTolerance);
 
                 int indxRadius = m_fabricLines.Fields.FindField("RADIUS");
                 int indxCenterpointID = m_fabricLines.Fields.FindField("CENTERPOINTID");
