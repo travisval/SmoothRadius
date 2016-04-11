@@ -2,7 +2,7 @@
   <Name>Smooth Radius</Name>
   <AddInID>{addd05b2-9088-46ef-ac2e-0e3e1396f355}</AddInID>
   <Description>Type in a description for this Add-in.</Description>
-  <Version>0.1</Version>
+  <Version>0.2</Version>
   <Image>Images\SmoothRadiusAddin.png</Image>
   <Author>tval@esri.ca</Author>
   <Company>Esri Canada</Company>
