@@ -476,6 +476,7 @@ namespace SmoothRadiusAddin
         public static int GetNextSequenceID(IFeatureClass linesFeatureClass, int parcelID, Dictionary<int, int> idCache = null)
         {
             IFeatureCursor maxCursor = null;
+            IRow maxFeat = null;
             try
             {
                 if (idCache != null && idCache.ContainsKey(parcelID))
@@ -490,13 +491,12 @@ namespace SmoothRadiusAddin
 
                 int seqenceIdx = maxCursor.Fields.FindField(SequenceFieldName);
 
-                IRow maxFeat = null;
+                
                 while ((maxFeat = maxCursor.NextFeature()) != null)
                 {
                     maxSequence = Math.Max((int)maxFeat.get_Value(seqenceIdx), maxSequence);
                     Marshal.ReleaseComObject(maxFeat);
                 }
-                Marshal.ReleaseComObject(maxCursor);
 
                 if (maxSequence <= 0)
                     throw new Exception("Failed to find max sequence value");
@@ -510,6 +510,8 @@ namespace SmoothRadiusAddin
             {
                 if(maxCursor != null)
                     Marshal.ReleaseComObject(maxCursor);
+                if (maxFeat != null)
+                    Marshal.ReleaseComObject(maxFeat);
             }
         }
         public static IGeometry CreateNilGeometry(IFeatureClass linesFeatureClass)
