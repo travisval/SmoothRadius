@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:u="clr-namespace:Wpf.Util"
-             mc:Ignorable="d" Height="132" Width="300" MinWidth="300">
+             mc:Ignorable="d" MinWidth="300" MinHeight="160">
     <DockPanel>
         <Grid DockPanel.Dock="Top">
             <StackPanel>
@@ -16,6 +16,10 @@
                 </Grid>
             </StackPanel>
         </Grid>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right">
+            <Button Width="75" Height="25" Margin="5" Click="Cancel_Click">Cancel</Button>
+            <Button Width="75" Height="25" Margin="5" Click="OK_Click">OK</Button>
+        </StackPanel>
         <Expander Margin="5" Header="{Binding}">
             <Expander.HeaderTemplate>
                 <DataTemplate>

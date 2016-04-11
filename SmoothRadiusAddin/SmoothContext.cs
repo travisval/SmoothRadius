@@ -175,7 +175,7 @@ namespace SmoothRadiusAddin
                                 break;
                             case RelativeOrientation.Disjoint:
                             case RelativeOrientation.Parallel:
-                                throw new Exception("Invalid RelativeOrientation");
+                                throw new Exception("determinConnectivity, straight line, Invalid Relative Orientation");
                         }
 
                         sl.IsForward = l_isForward;
@@ -214,12 +214,12 @@ namespace SmoothRadiusAddin
                         correctDirection = l_isForward != IsForward;
                     }
                     else
-                        throw new Exception("Invalid orientation");
+                        throw new Exception("determinConnectivity, curve, Invalid Relative Orientation");
 
                     if (Math.Abs(diff) > MaxTangentLineAngleInRadians)
-                        l.AddWarning(String.Format("The angle of this segment is {0} degrees different than an adjacent segment.", FabricFunctions.toDegrees(diff)));
+                        l.AddWarning(String.Format("The angle of this segment is {0:F4} degrees different than an adjacent segment", FabricFunctions.toDegrees(diff)));
                     if (!correctDirection)
-                        l.AddWarning("The sign of the radius dows not match an adjacent segment.");
+                        l.AddWarning("The sign of the radius does not match an adjacent segment");
 
                     determinConnectivity(l, l_fromAngle, l_toAngle, l_isForward, remaining);
                 }
@@ -232,7 +232,7 @@ namespace SmoothRadiusAddin
             {
                 Line current = remaining.FirstOrDefault(w => w.IsCurve);
                 if (current == null)
-                    throw new Exception("A group of features containing only lines was detected");
+                    throw new Exception("A group of features containing no curves was found");
 
                 remaining.Remove(current);
 
@@ -252,7 +252,7 @@ namespace SmoothRadiusAddin
                 if (!line.IsCurve)
                     line.AddWarning("The line does not have a radius set");
                 else if (lowerBound > Math.Abs(line.Radius) || Math.Abs(line.Radius) > upperBound)
-                    line.AddWarning("The radius value is more than 5% of the median");
+                    line.AddWarning("The radius value is more than 5% off the median");
             }
 
             WarningCount = m_curves.Where(w => !string.IsNullOrEmpty(w.Warning)).Count();
@@ -304,30 +304,52 @@ namespace SmoothRadiusAddin
             int indxX = m_cadPoints.Fields.FindField("X");
             int indxY = m_cadPoints.Fields.FindField("Y");
             int indxZ = m_cadPoints.Fields.FindField("Z");
+            int indxHistorical = m_cadPoints.Fields.FindField("HISTORICAL");
             int indxCenterPoint = m_cadPoints.Fields.FindField("CENTERPOINT");
+            int indxStartDate = m_cadPoints.Fields.FindField("SYSTEMSTARTDATE");
 
-            IQueryFilter qFilter = new QueryFilter() { WhereClause = where };
-            IFeatureCursor cursor = m_cadPoints.Search(qFilter, true);
-            IFeature feature = null;
             bool zAware = m_cadPoints.Fields.get_Field(m_cadPoints.Fields.FindField(m_cadPoints.ShapeFieldName)).GeometryDef.HasZ;
             double sumx = 0.0, sumy = 0.0, sumz = 0.0;
             int count = 0, zCount = 0;
-            while ((feature = cursor.NextFeature()) != null)
-            {
-                int useCount = centerPoints.First(p => p.Key == feature.OID.ToString()).Count();
-                IPoint shape = (IPoint)feature.Shape;
-                double z = shape.Z;
 
-                sumx += (useCount * (double)feature.get_Value(indxX));
-                sumy += (useCount * (double)feature.get_Value(indxY));
-                object z_obj = feature.get_Value(indxZ);
-                if (zAware && !DBNull.Value.Equals(z_obj))
+            DateTime minStartDate = DateTime.MaxValue;
+
+            IQueryFilter qFilter = null;
+            IFeatureCursor cursor = null;
+            IFeature feature = null;
+            try
+            {
+                qFilter = new QueryFilter() { WhereClause = where };
+                cursor = m_cadPoints.Search(qFilter, true);
+
+                while ((feature = cursor.NextFeature()) != null)
                 {
-                    sumz += (useCount * (double)z_obj);
-                    zCount += useCount;
+                    int useCount = centerPoints.First(p => p.Key == feature.OID.ToString()).Count();
+                    IPoint shape = (IPoint)feature.Shape;
+                    double z = shape.Z;
+
+                    sumx += (useCount * (double)feature.get_Value(indxX));
+                    sumy += (useCount * (double)feature.get_Value(indxY));
+                    object z_obj = feature.get_Value(indxZ);
+                    if (zAware && !DBNull.Value.Equals(z_obj))
+                    {
+                        sumz += (useCount * (double)z_obj);
+                        zCount += useCount;
+                    }
+                    count += useCount;
+                    DateTime thisDateTime;
+                    if (feature.SafeRead(indxStartDate, out thisDateTime))
+                        minStartDate = (minStartDate < thisDateTime) ? minStartDate : thisDateTime;
+                    Marshal.ReleaseComObject(feature);
                 }
-                count += useCount;
             }
+            finally
+            {
+                if (feature != null) Marshal.ReleaseComObject(feature);
+                if (cursor != null) Marshal.ReleaseComObject(cursor);
+                if (qFilter != null) Marshal.ReleaseComObject(qFilter);
+            }
+
             double X = Math.Round(sumx / count, 6), Y = Math.Round(sumy / count, 6), Z = double.NaN;
             IPoint meanCenter = new Point() {  X = X, Y = Y  };
             if (zAware)
@@ -339,17 +361,27 @@ namespace SmoothRadiusAddin
                 ((IZAware)meanCenter).ZAware = true;
             }
 
-            //Insert new center point
-            feature = m_cadPoints.CreateFeature();
-            feature.set_Value(indxX, X);
-            feature.set_Value(indxY, Y);
-            if (!double.IsNaN(Z))
+            try
             {
-                feature.set_Value(indxZ, Z);
+                //Insert new center point
+                feature = m_cadPoints.CreateFeature();
+                feature.set_Value(indxX, X);
+                feature.set_Value(indxY, Y);
+                if (!double.IsNaN(Z))
+                {
+                    feature.set_Value(indxZ, Z);
+                }
+                feature.set_Value(indxCenterPoint, 1);
+                feature.set_Value(indxHistorical, 0);
+                feature.set_Value(indxStartDate, minStartDate);
+                feature.Shape = meanCenter;
+                feature.Store();
+                return feature.OID;
             }
-            feature.set_Value(indxCenterPoint, 1);
-            feature.Shape = meanCenter;
-            return feature.OID;
+            finally
+            {
+                if (feature != null) Marshal.ReleaseComObject(feature);
+            }
         }
 
         private void updateLines(int meanCenterpointID)
@@ -446,51 +478,104 @@ namespace SmoothRadiusAddin
                             }
                             else  //endpoint
                             {
-                                insert_buffer.set_Value(ToPointFieldIdx, feature.get_Value(ToPointFieldIdx));
+                                insert_buffer.set_Value(FromPointFieldIdx, feature.get_Value(ToPointFieldIdx));
                                 insert_buffer.set_Value(BearingFieldIdx, perpendicular - halfdelta);
                             }
 
                             insert_cursor.InsertFeature(insert_buffer);
                         }
-
                     }
                     else
                     {
                         double radius = (Double)radius_obj;
 
+                        //update curve
                         if (radius < 0)
                             feature.set_Value(RadiusFieldIdx, Value * -1);
                         else
                             feature.set_Value(RadiusFieldIdx, Value);
                         feature.set_Value(CenterpointFieldIdx, meanCenterpointID);
+
+                        //update radial lines
+                        IQueryFilter radial_filter = null;
+                        IFeatureCursor radial_cursor = null;
+                        IFeature radial_feature = null;
+                        try
+                        {
+                            radial_filter = new QueryFilter()
+                            {
+                                WhereClause = string.Format("({0} = {1} or {0} = {2}) and {3} = {4} and {5} = {6}",
+                                           FabricFunctions.FromPointFieldName,feature.get_Value(FromPointFieldIdx), feature.get_Value(ToPointFieldIdx),
+                                           FabricFunctions.ToPointFieldName, meanCenterpointID,
+                                           FabricFunctions.ParcelIDFieldName, feature.get_Value(ParcelIDFieldIdx))
+                            };
+                            radial_cursor = m_cadLines.Update(radial_filter, true);
+                            while ((radial_feature = radial_cursor.NextFeature()) != null)
+                            {
+                                radial_feature.set_Value(DistanceFieldIdx, Value);
+                                radial_cursor.UpdateFeature(radial_feature);
+                            }
+                            radial_cursor.Flush();
+                        }
+                        finally
+                        {
+                            if (radial_feature != null) Marshal.ReleaseComObject(radial_feature);
+                            if (radial_cursor != null) Marshal.ReleaseComObject(radial_cursor);
+                            if (radial_filter != null) Marshal.ReleaseComObject(radial_filter);
+                        }
+
+
                     }
                     update_cursor.UpdateFeature(feature);
                 }
+                insert_cursor.Flush();
+                update_cursor.Flush();
             }
             finally
             {
-                if (insert_buffer == null) Marshal.ReleaseComObject(insert_buffer);
-                if (insert_cursor == null) Marshal.ReleaseComObject(insert_cursor);
-                if (update_cursor == null) Marshal.ReleaseComObject(update_cursor);
+                if (insert_buffer != null) Marshal.ReleaseComObject(insert_buffer);
+                if (insert_cursor != null) Marshal.ReleaseComObject(insert_cursor);
+                if (update_cursor != null) Marshal.ReleaseComObject(update_cursor);
             }
         }
 
         private void deleteOraphanedPoints(IEnumerable<int> centerPoints)
         {
             List<int> allIds = new List<int>(centerPoints);
-            IQueryFilter qFilter = new QueryFilter() { SubFields = "CENTERPOINTID", WhereClause = String.Format("CENTERPOINTID in ({0})", String.Join(",", centerPoints.Select(i=>i.ToString()))) };
-            ((IQueryFilterDefinition2)qFilter).PrefixClause = "DISTINCT";
-            ICursor cursor = ((ITable)m_cadLines).Search(qFilter, false);
-            IRow row = null;
-            int indxCenterpoint = cursor.Fields.FindField("CENTERPOINTID");
 
-            while ((row = cursor.NextRow()) != null)
+            IQueryFilter qFilter = null;
+            IFeatureCursor cursor = null;
+            IFeature row = null;
+            try
             {
-                int centerpoint;
-                if (row.SafeRead(indxCenterpoint, out centerpoint))
+                qFilter = new QueryFilter() { WhereClause = String.Format("CENTERPOINTID in ({0})", String.Join(",", centerPoints.Select(i => i.ToString()))) };
+                //((IQueryFilterDefinition2)qFilter).PrefixClause = "DISTINCT";
+                //Distinct clauses don't appear to work inside of edit sessions, reproduced to 10.1
+                //...work around using client side distinct.
+                //https://geonet.esri.com/thread/83171
+
+                cursor = m_cadLines.Search(qFilter, false);
+                int indxCenterpoint = cursor.Fields.FindField("CENTERPOINTID");
+                List<int> usedID = new List<int>();
+
+                while ((row = cursor.NextFeature()) != null)
                 {
-                    allIds.Remove(centerpoint);
+                    int centerpoint;
+                    if (row.SafeRead(indxCenterpoint, out centerpoint))
+                    {
+                        usedID.Add(centerpoint);
+                    }
+                    Marshal.ReleaseComObject(row);
                 }
+
+                foreach (int i in usedID.Distinct())
+                    allIds.Remove(i);
+            }
+            finally
+            {
+                if (row != null) Marshal.ReleaseComObject(row);
+                if (cursor != null) Marshal.ReleaseComObject(cursor);
+                if (qFilter != null) Marshal.ReleaseComObject(qFilter);
             }
 
             if (allIds.Count > 0)

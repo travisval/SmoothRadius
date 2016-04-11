@@ -138,12 +138,6 @@
     <Compile Include="SmoothControl.xaml.cs">
       <DependentUpon>SmoothControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="SmoothDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SmoothDialog.Designer.cs">
-      <DependentUpon>SmoothDialog.cs</DependentUpon>
-    </Compile>
     <Compile Include="SmoothRadiusTool.cs" />
     <Compile Include="SmoothRadiusTool.Designer.cs">
       <DependentUpon>SmoothRadiusTool.cs</DependentUpon>
@@ -182,11 +176,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="SmoothDialog.resx">
-      <DependentUpon>SmoothDialog.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\Warning.png" />

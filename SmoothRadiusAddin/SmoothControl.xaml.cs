@@ -25,6 +25,8 @@ namespace SmoothRadiusAddin
         public SmoothControl()
         {
             InitializeComponent();
+
+            
         }
 
         private void Flash(IFeature feature)
@@ -66,6 +68,22 @@ namespace SmoothRadiusAddin
                     context.m_curves.Remove(c);
                 }
             }
+        }
+
+        public delegate void ExpanderChangedHandler(object sender, EventArgs e);
+
+        public event ExpanderChangedHandler CancelClicked;
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            if (CancelClicked != null)
+                CancelClicked(this, new EventArgs());
+        }
+
+        public event ExpanderChangedHandler OKClicked;
+        private void OK_Click(object sender, RoutedEventArgs e)
+        {
+            if (OKClicked != null)
+                OKClicked(this, new EventArgs());
         }
     }
 }

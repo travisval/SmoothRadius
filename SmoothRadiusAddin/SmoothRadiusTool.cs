@@ -127,7 +127,7 @@ namespace SmoothRadiusAddin
                 int indxRadius = m_fabricLines.Fields.FindField("RADIUS");
                 int indxCenterpointID = m_fabricLines.Fields.FindField("CENTERPOINTID");
                 int indxParcelID = m_fabricLines.Fields.FindField("PARCELID");
-
+                
                 //Query Lines
                 ISpatialFilter filter = new SpatialFilter()
                 {
@@ -145,13 +145,13 @@ namespace SmoothRadiusAddin
                     bool isRadius = feature.SafeRead(indxRadius, out radius);
                     bool isCenterpoint = feature.SafeRead(indxCenterpointID, out centerpoint);
                     bool isParcel = feature.SafeRead(indxParcelID, out parcel);
-
+                                        
                     if (!isParcel)
                         throw new Exception("A null pracel identifier has been detected");
                     if (isRadius ^ isCenterpoint)
                         throw new Exception("A feature should have radius and centerpoint information set, or should not have either of the values set.");
 
-                    curves.Add((isRadius) ? 
+                    curves.Add((isRadius) ?
                         new Line(feature.OID, isRadius, radius, centerpoint, parcel, feature.ShapeCopy) :
                         new StraightLine(feature.OID, parcel, feature.ShapeCopy));
                 }
@@ -159,13 +159,39 @@ namespace SmoothRadiusAddin
 
                 if (curves.Count() > 0)
                 {
-                    SmoothDialog sd = new SmoothDialog();
                     SmoothContext context = new SmoothContext(m_cadFab, m_editor, curves);
-                    sd.SetContext(context);
-                    if (sd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    SmoothControl control = new SmoothControl() { DataContext = context };
+
+                    System.Windows.Window dialog = new System.Windows.Window()
                     {
+                        SizeToContent = System.Windows.SizeToContent.WidthAndHeight,
+                        Content = control
+                    };
+                    control.OKClicked += (sender,e) => { 
+                            if (context.WarningCount > 0)
+                            {
+                                if (System.Windows.Forms.DialogResult.Yes != MessageBox.Show(
+                                    String.Format("There are {0} warnings present in the selected segments.  Are you sure you want to apply the updates?", context.WarningCount), "Warnings Present", MessageBoxButtons.YesNo))
+                                {
+                                    return;
+                                }
+                            }
+
+                            if (Math.Abs(context.Value - context.Median) > (context.Median * 0.05))
+                            {
+                                if (System.Windows.Forms.DialogResult.Yes != MessageBox.Show(
+                                    "The current value is more than 5% different than the current median value.  Are you sure you want to apply the updates?", "Value Difference", MessageBoxButtons.YesNo))
+                                {
+                                    return;
+                                }
+                            }
                         context.Update();
-                    }
+                        dialog.Close();
+                    };
+                    control.CancelClicked += (sender,e)=>{
+                        dialog.Close();
+                    };
+                    dialog.ShowDialog();
                 }
                 else
                 {
