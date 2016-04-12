@@ -160,12 +160,18 @@ namespace SmoothRadiusAddin
                 if (curves.Count() > 0)
                 {
                     SmoothContext context = new SmoothContext(m_cadFab, m_editor, curves);
+                    System.Windows.Controls.ScrollViewer scrollViewer = new System.Windows.Controls.ScrollViewer()
+                    {
+                        HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+                        VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto
+                    };
                     SmoothControl control = new SmoothControl() { DataContext = context };
+                    scrollViewer.Content = control;
 
                     System.Windows.Window dialog = new System.Windows.Window()
                     {
                         SizeToContent = System.Windows.SizeToContent.WidthAndHeight,
-                        Content = control
+                        Content = scrollViewer
                     };
                     control.OKClicked += (sender,e) => { 
                             if (context.WarningCount > 0)
