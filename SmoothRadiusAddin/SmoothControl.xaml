@@ -8,7 +8,7 @@
     <DockPanel>
         <Grid DockPanel.Dock="Top">
             <StackPanel>
-                <TextBox Margin="5" Text="{Binding Value, FallbackValue=Value}"></TextBox>
+                <TextBox Margin="5" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Slider Margin="5" Minimum="{Binding Min}" Maximum="{Binding Max}" Value="{Binding Value}" IsSnapToTickEnabled="True" TickFrequency="0.01"></Slider>
                 <Grid>
                     <TextBlock Margin="5" Text="{Binding Min, FallbackValue=Min}"/>
