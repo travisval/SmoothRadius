@@ -515,7 +515,6 @@ namespace SmoothRadiusAddin
                                 radial_feature.set_Value(DistanceFieldIdx, Value);
                                 radial_cursor.UpdateFeature(radial_feature);
                             }
-                            radial_cursor.Flush();
                         }
                         finally
                         {
@@ -523,13 +522,9 @@ namespace SmoothRadiusAddin
                             if (radial_cursor != null) Marshal.ReleaseComObject(radial_cursor);
                             if (radial_filter != null) Marshal.ReleaseComObject(radial_filter);
                         }
-
-
                     }
                     update_cursor.UpdateFeature(feature);
                 }
-                insert_cursor.Flush();
-                update_cursor.Flush();
             }
             finally
             {
