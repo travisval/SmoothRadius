@@ -17,8 +17,8 @@
             </StackPanel>
         </Grid>
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right">
-            <Button Width="75" Height="25" Margin="5" Click="Cancel_Click">Cancel</Button>
-            <Button Width="75" Height="25" Margin="5" Click="OK_Click">OK</Button>
+            <Button Width="75" Height="25" Margin="5" Click="Cancel_Click" IsCancel="True">Cancel</Button>
+            <Button Width="75" Height="25" Margin="5" Click="OK_Click" IsDefault="True">OK</Button>
         </StackPanel>
         <Expander Margin="5" Header="{Binding}">
             <Expander.HeaderTemplate>

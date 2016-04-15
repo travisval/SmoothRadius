@@ -113,30 +113,28 @@ namespace SmoothRadiusAddin
             pRegenFabric.RegenerateParcels(fids, false, null);
         }
 
-        public static bool StartCadastralEditOperation(IEditor editor, ICadastralFabric fabric, IEnumerable<int> parcelsToLock, params esriCadastralFabricTable[] tables)
+        public static bool StartCadastralEditOperation(IEditor editor, ICadastralFabric fabric, IEnumerable<int> parcelsToLock, string JobDescription, params esriCadastralFabricTable[] tables)
         {
-            bool bIsFileBasedGDB = false;
-            bool bIsUnVersioned = false;
-            bool bUseNonVersionedDelete = false;
-            IWorkspace pWS = ((IDataset)fabric).Workspace;
+            IWorkspace workspace = ((IDataset)fabric).Workspace;
 
-            if (!SetupEditEnvironment(pWS, fabric, null, out bIsFileBasedGDB, out bIsUnVersioned, out bUseNonVersionedDelete))
-            {
-                System.Windows.Forms.MessageBox.Show("The editing environment could not be initialized");
-                return false;
-            }
+            if (editor.EditState == esriEditState.esriStateNotEditing)
+                throw new Exception("Start an edit session before calling StartCadastralEditOperation");
 
-            #region Create Cadastral Job
-            string sTime = "";
-            if (!bIsUnVersioned && !bIsFileBasedGDB)
+            bool isVersioned = isFabricVersioned(fabric);
+
+            if (!isVersioned && workspace.Type == esriWorkspaceType.esriRemoteDatabaseWorkspace)
             {
+                System.Windows.Forms.DialogResult dlgRes = System.Windows.Forms.MessageBox.Show(
+                    "Fabric is not registered as versioned." + Environment.NewLine +
+                    "You will not be able to undo, proceed?", "No suppost for Undo", System.Windows.Forms.MessageBoxButtons.OKCancel);
+                if (dlgRes == System.Windows.Forms.DialogResult.Cancel)
+                    return false;
+
                 //see if parcel locks can be obtained on the selected parcels. First create a job.
-                DateTime localNow = DateTime.Now;
-                sTime = Convert.ToString(localNow);
                 ICadastralJob pJob = new CadastralJob();
-                pJob.Name = sTime;
+                String JobName = pJob.Name = Convert.ToString(DateTime.Now);
                 pJob.Owner = System.Windows.Forms.SystemInformation.UserName;
-                pJob.Description = "Convert lines to curves";
+                pJob.Description = JobDescription;
                 try
                 {
                     Int32 jobId = fabric.CreateJob(pJob);
@@ -153,31 +151,20 @@ namespace SmoothRadiusAddin
                     }
                     return false;
                 }
-            }
-            #endregion
-
-            #region Test for Edit Locks
-            ICadastralFabricLocks pFabLocks = (ICadastralFabricLocks)fabric;
-
-            //only need to get locks for parcels that have lines that are to be changed
-
-            //IFIDSet parcelFIDs = new FIDSet();
-            ILongArray affectedParcels = new LongArray();
-            foreach (int i in parcelsToLock)
-            {
-                //parcelFIDs.Add(i);
-                affectedParcels.Add(i);
-            }
-
-            if (!bIsUnVersioned && !bIsFileBasedGDB)
-            {
-                pFabLocks.LockingJob = sTime;
+            
+                ICadastralFabricLocks fabricLocks = (ICadastralFabricLocks)fabric;
+        
+                ILongArray affectedParcels = new LongArray();
+                foreach (int i in parcelsToLock)
+                    affectedParcels.Add(i);
+                           
+                fabricLocks.LockingJob = JobName;
                 ILongArray pLocksInConflict = null;
                 ILongArray pSoftLcksInConflict = null;
 
                 try
                 {
-                    pFabLocks.AcquireLocks(affectedParcels, true, ref pLocksInConflict, ref pSoftLcksInConflict);
+                    fabricLocks.AcquireLocks(affectedParcels, true, ref pLocksInConflict, ref pSoftLcksInConflict);
                 }
                 catch (COMException pCOMEx)
                 {
@@ -186,7 +173,7 @@ namespace SmoothRadiusAddin
                     {
                         System.Windows.Forms.MessageBox.Show("Edit Locks could not be acquired on all selected parcels.");
                         // since the operation is being aborted, release any locks that were acquired
-                        pFabLocks.UndoLastAcquiredLocks();
+                        fabricLocks.UndoLastAcquiredLocks();
                     }
                     else
                         System.Windows.Forms.MessageBox.Show(pCOMEx.Message + Environment.NewLine + Convert.ToString(pCOMEx.ErrorCode));
@@ -194,7 +181,6 @@ namespace SmoothRadiusAddin
                     return false;
                 }
             }
-            #endregion
 
             if (editor.EditState == esriEditState.esriStateEditing)
             {
@@ -204,16 +190,9 @@ namespace SmoothRadiusAddin
                 }
                 catch
                 {
-                    editor.AbortOperation();//abort any open edit operations and try again
+                    System.Windows.Forms.MessageBox.Show("Aborting previous edit operation");
+                    editor.AbortOperation();
                     editor.StartOperation();
-                }
-            }
-            if (bUseNonVersionedDelete)
-            {
-                if (!StartEditing(pWS, bIsUnVersioned))
-                {
-                    System.Windows.Forms.MessageBox.Show("Couldn't start an edit session");
-                    return false;
                 }
             }
 
@@ -225,6 +204,19 @@ namespace SmoothRadiusAddin
             return true;
 
         }
+
+        private static bool isFabricVersioned(ICadastralFabric fabric)
+        {
+            IWorkspace workspace = ((IDataset)fabric).Workspace;
+            if (workspace.Type == esriWorkspaceType.esriRemoteDatabaseWorkspace)
+            {
+                ITable table = fabric.get_CadastralTable(esriCadastralFabricTable.esriCFTParcels);
+                IVersionedObject versionedObject = (IVersionedObject)table;
+                return (!(versionedObject.IsRegisteredAsVersioned));
+            }
+            return false;
+        }
+
         static bool StartEditing(IWorkspace TheWorkspace, bool IsUnversioned)   // Start EditSession + create EditOperation
         {
             bool IsFileBasedGDB =

@@ -278,7 +278,7 @@ namespace SmoothRadiusAddin
             var parcelIDs = m_curves.Where(l=>l.IsCurve).Select(l => l.ParcelID).Distinct();
             var centerpointIDs = m_curves.Where(l => l.IsCurve).Select(l => l.CenterpointID).Distinct();
 
-            if (!FabricFunctions.StartCadastralEditOperation(m_editor, m_cadFab, parcelIDs, esriCadastralFabricTable.esriCFTLines, esriCadastralFabricTable.esriCFTPoints))
+            if (!FabricFunctions.StartCadastralEditOperation(m_editor, m_cadFab, parcelIDs, "Smooth curves", esriCadastralFabricTable.esriCFTLines, esriCadastralFabricTable.esriCFTPoints))
                 return;
 
             //Get and mean center points
@@ -407,6 +407,7 @@ namespace SmoothRadiusAddin
             IFeatureCursor insert_cursor = null;
             IFeatureBuffer insert_buffer = null;
             IFeatureCursor update_cursor = null;
+            IFeature feature = null;
             try
             {
                 insert_cursor = m_cadLines.Insert(true);
@@ -414,8 +415,7 @@ namespace SmoothRadiusAddin
 
                 string lineWhere = String.Format("{0} in ({1})", m_cadLines.OIDFieldName, String.Join(",", m_curves.Select(w => w.ObjectID.ToString()).ToArray()));
                 IQueryFilter qFilter = new QueryFilter() { WhereClause = lineWhere };
-                update_cursor = m_cadLines.Update(qFilter, true);
-                IFeature feature = null;
+                update_cursor = m_cadLines.Update(qFilter, false);
                 Dictionary<int, int> sequenceCache = new Dictionary<int, int>();
                 while ((feature = update_cursor.NextFeature()) != null)
                 {
@@ -509,11 +509,12 @@ namespace SmoothRadiusAddin
                                            FabricFunctions.ToPointFieldName, meanCenterpointID,
                                            FabricFunctions.ParcelIDFieldName, feature.get_Value(ParcelIDFieldIdx))
                             };
-                            radial_cursor = m_cadLines.Update(radial_filter, true);
+                            radial_cursor = m_cadLines.Update(radial_filter, false);
                             while ((radial_feature = radial_cursor.NextFeature()) != null)
                             {
                                 radial_feature.set_Value(DistanceFieldIdx, Value);
                                 radial_cursor.UpdateFeature(radial_feature);
+                                Marshal.ReleaseComObject(radial_feature);
                             }
                         }
                         finally
@@ -524,10 +525,12 @@ namespace SmoothRadiusAddin
                         }
                     }
                     update_cursor.UpdateFeature(feature);
+                    Marshal.ReleaseComObject(feature);
                 }
             }
             finally
             {
+                if (feature != null) Marshal.ReleaseComObject(feature);
                 if (insert_buffer != null) Marshal.ReleaseComObject(insert_buffer);
                 if (insert_cursor != null) Marshal.ReleaseComObject(insert_cursor);
                 if (update_cursor != null) Marshal.ReleaseComObject(update_cursor);
