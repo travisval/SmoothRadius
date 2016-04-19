@@ -471,7 +471,7 @@ namespace SmoothRadiusAddin
                             insert_buffer.set_Value(SystemStartDateFieldIdx, feature.get_Value(SystemStartDateFieldIdx));
                             insert_buffer.Shape = geometry;
 
-                            if (i == 0) // startpoing
+                            if (i == 0) // startpoint
                             {
                                 insert_buffer.set_Value(FromPointFieldIdx, feature.get_Value(FromPointFieldIdx));
                                 insert_buffer.set_Value(BearingFieldIdx, perpendicular + halfdelta);
@@ -488,6 +488,7 @@ namespace SmoothRadiusAddin
                     else
                     {
                         double radius = (Double)radius_obj;
+                        int oldCenterPointID = (int)feature.get_Value(CenterpointFieldIdx);
 
                         //update curve
                         if (radius < 0)
@@ -505,14 +506,17 @@ namespace SmoothRadiusAddin
                             radial_filter = new QueryFilter()
                             {
                                 WhereClause = string.Format("({0} = {1} or {0} = {2}) and {3} = {4} and {5} = {6}",
-                                           FabricFunctions.FromPointFieldName,feature.get_Value(FromPointFieldIdx), feature.get_Value(ToPointFieldIdx),
-                                           FabricFunctions.ToPointFieldName, meanCenterpointID,
+                                           FabricFunctions.FromPointFieldName, feature.get_Value(FromPointFieldIdx), feature.get_Value(ToPointFieldIdx),
+                                           FabricFunctions.ToPointFieldName, oldCenterPointID,
                                            FabricFunctions.ParcelIDFieldName, feature.get_Value(ParcelIDFieldIdx))
                             };
                             radial_cursor = m_cadLines.Update(radial_filter, false);
+                            int radial_distanceIndx = radial_cursor.Fields.FindField(FabricFunctions.DistanceFieldName);
+                            int radial_toPointFieldNameIndx = radial_cursor.Fields.FindField(FabricFunctions.ToPointFieldName);
                             while ((radial_feature = radial_cursor.NextFeature()) != null)
                             {
-                                radial_feature.set_Value(DistanceFieldIdx, Value);
+                                radial_feature.set_Value(radial_distanceIndx, Value);
+                                radial_feature.set_Value(radial_toPointFieldNameIndx, meanCenterpointID);
                                 radial_cursor.UpdateFeature(radial_feature);
                                 Marshal.ReleaseComObject(radial_feature);
                             }
