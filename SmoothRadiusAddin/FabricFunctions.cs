@@ -113,6 +113,7 @@ namespace SmoothRadiusAddin
             pRegenFabric.RegenerateParcels(fids, false, null);
         }
 
+        static bool CanNotUndoWarning = false;
         public static bool StartCadastralEditOperation(IEditor editor, ICadastralFabric fabric, IEnumerable<int> parcelsToLock, string JobDescription, params esriCadastralFabricTable[] tables)
         {
             IWorkspace workspace = ((IDataset)fabric).Workspace;
@@ -124,11 +125,15 @@ namespace SmoothRadiusAddin
 
             if (!isVersioned && workspace.Type == esriWorkspaceType.esriRemoteDatabaseWorkspace)
             {
-                System.Windows.Forms.DialogResult dlgRes = System.Windows.Forms.MessageBox.Show(
-                    "Fabric is not registered as versioned." + Environment.NewLine +
-                    "You will not be able to undo, proceed?", "No suppost for Undo", System.Windows.Forms.MessageBoxButtons.OKCancel);
-                if (dlgRes == System.Windows.Forms.DialogResult.Cancel)
-                    return false;
+                if (!CanNotUndoWarning)
+                {
+                    CanNotUndoWarning = true;
+                    System.Windows.Forms.DialogResult dlgRes = System.Windows.Forms.MessageBox.Show(
+                        "Fabric is not registered as versioned." + Environment.NewLine +
+                        "You will not be able to undo, proceed?", "No support for Undo", System.Windows.Forms.MessageBoxButtons.OKCancel);
+                    if (dlgRes == System.Windows.Forms.DialogResult.Cancel)
+                        return false;
+                }
 
                 //see if parcel locks can be obtained on the selected parcels. First create a job.
                 ICadastralJob pJob = new CadastralJob();
@@ -212,7 +217,7 @@ namespace SmoothRadiusAddin
             {
                 ITable table = fabric.get_CadastralTable(esriCadastralFabricTable.esriCFTParcels);
                 IVersionedObject versionedObject = (IVersionedObject)table;
-                return (!(versionedObject.IsRegisteredAsVersioned));
+                return versionedObject.IsRegisteredAsVersioned;
             }
             return false;
         }
