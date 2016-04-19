@@ -191,8 +191,23 @@ namespace SmoothRadiusAddin
                                     return;
                                 }
                             }
-                        context.Update();
-                        dialog.Close();
+                        IMouseCursor appCursor = new MouseCursorClass();
+                        appCursor.SetCursor(2);
+                        try
+                        {
+                            context.Update();
+                        }
+                        catch (Exception exx)
+                        {
+                            MessageBox.Show(exx.Message, "Unexpected exception");
+                        }
+                        finally
+                        {
+                            dialog.Close();
+                            appCursor.SetCursor(0);
+                            //Marshal.ReleaseComObject(appCursor);
+                        }
+                        
                     };
                     control.CancelClicked += (sender,e)=>{
                         dialog.Close();
