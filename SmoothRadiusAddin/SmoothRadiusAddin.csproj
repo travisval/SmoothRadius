@@ -96,6 +96,9 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SmoothRadiusWindow.xaml.cs">
+      <DependentUpon>SmoothRadiusWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Config.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Config.esriaddinx</DependentUpon>
@@ -172,6 +175,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="SmoothRadiusWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="SmoothControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -179,6 +186,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\Warning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\SmoothRadiusWindow.png" />
   </ItemGroup>
   <PropertyGroup>
     <ZipFileExtension>esriAddIn</ZipFileExtension>

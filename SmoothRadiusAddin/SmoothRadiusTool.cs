@@ -159,60 +159,7 @@ namespace SmoothRadiusAddin
 
                 if (curves.Count() > 0)
                 {
-                    SmoothContext context = new SmoothContext(m_cadFab, m_editor, curves);
-                    System.Windows.Controls.ScrollViewer scrollViewer = new System.Windows.Controls.ScrollViewer()
-                    {
-                        HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
-                        VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto
-                    };
-                    SmoothControl control = new SmoothControl() { DataContext = context };
-                    scrollViewer.Content = control;
-
-                    System.Windows.Window dialog = new System.Windows.Window()
-                    {
-                        SizeToContent = System.Windows.SizeToContent.WidthAndHeight,
-                        Content = scrollViewer
-                    };
-                    control.OKClicked += (sender,e) => { 
-                            if (context.WarningCount > 0)
-                            {
-                                if (System.Windows.Forms.DialogResult.Yes != MessageBox.Show(
-                                    String.Format("There are {0} warnings present in the selected segments.  Are you sure you want to apply the updates?", context.WarningCount), "Warnings Present", MessageBoxButtons.YesNo))
-                                {
-                                    return;
-                                }
-                            }
-
-                            if (Math.Abs(context.Value - context.Median) > (context.Median * 0.05))
-                            {
-                                if (System.Windows.Forms.DialogResult.Yes != MessageBox.Show(
-                                    "The current value is more than 5% different than the current median value.  Are you sure you want to apply the updates?", "Value Difference", MessageBoxButtons.YesNo))
-                                {
-                                    return;
-                                }
-                            }
-                        IMouseCursor appCursor = new MouseCursorClass();
-                        appCursor.SetCursor(2);
-                        try
-                        {
-                            context.Update();
-                        }
-                        catch (Exception exx)
-                        {
-                            MessageBox.Show(exx.Message, "Unexpected exception");
-                        }
-                        finally
-                        {
-                            dialog.Close();
-                            appCursor.SetCursor(0);
-                            //Marshal.ReleaseComObject(appCursor);
-                        }
-                        
-                    };
-                    control.CancelClicked += (sender,e)=>{
-                        dialog.Close();
-                    };
-                    dialog.ShowDialog();
+                    SmoothRadiusWindow.Show(new SmoothContext(m_cadFab, m_editor, curves));
                 }
                 else
                 {

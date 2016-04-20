@@ -6,12 +6,17 @@
   <Image>Images\SmoothRadiusAddin.png</Image>
   <Author>tval@esri.ca</Author>
   <Company>Esri Canada</Company>
-  <Date>4/6/2016</Date>
+  <Date>4/19/2016</Date>
   <Targets>
     <Target name="Desktop" version="10.1" />
   </Targets>
   <AddIn language="CLR4.0" library="SmoothRadiusAddin.dll" namespace="SmoothRadiusAddin">
     <ArcMap>
+      <DockableWindows>
+        <DockableWindow id="Esri_Canada_SmoothRadiusAddin_SmoothRadiusWindow" class="SmoothRadiusWindow+AddinImpl" caption="Smooth Radius" image="Images\SmoothRadiusWindow.png">
+          <InitialPlacement height="300" width="300" state="pinned" position="left" />
+        </DockableWindow>
+      </DockableWindows>
       <Editor>
         <Commands>
           <Tool id="Esri_Canada_SmoothRadiusAddin_SmoothRadiusTool" class="SmoothRadiusTool" message="Trace a cadastral fabric curve to set it's radius (requires edit session)." caption="Smooth Radius Trace Tool" category="Parcel Fabric Add-ins" image="Images\SmoothRadiusTool.png" onDemand="false">
