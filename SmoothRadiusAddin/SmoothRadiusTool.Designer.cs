@@ -15,31 +15,38 @@ namespace SmoothRadiusAddin
         #region Tool input overriding methods
         protected sealed override void OnMouseDown(MouseEventArgs arg)
         {
-            m_csc.OnMouseDown(mousebutton2int(arg), mouseshift2int(arg), arg.X, arg.Y);
+            if (m_csc != null)
+                m_csc.OnMouseDown(mousebutton2int(arg), mouseshift2int(arg), arg.X, arg.Y);
         }
 
         protected sealed override void OnMouseMove(MouseEventArgs arg)
         {
-            m_csc.OnMouseMove(mousebutton2int(arg), mouseshift2int(arg), arg.X, arg.Y);
+            if (m_csc != null)
+                m_csc.OnMouseMove(mousebutton2int(arg), mouseshift2int(arg), arg.X, arg.Y);
         }
 
         protected sealed override void OnMouseUp(MouseEventArgs arg)
         {
-            m_csc.OnMouseUp(mousebutton2int(arg), mouseshift2int(arg), arg.X, arg.Y);
+            if (m_csc != null)
+                m_csc.OnMouseUp(mousebutton2int(arg), mouseshift2int(arg), arg.X, arg.Y);
         }
 
         protected sealed override void OnKeyDown(KeyEventArgs arg)
         {
-            m_csc.OnKeyDown((int)arg.KeyCode, keyshift2int(arg));
+            if (m_csc != null)
+                m_csc.OnKeyDown((int)arg.KeyCode, keyshift2int(arg));
         }
         protected sealed override void OnKeyUp(KeyEventArgs arg)
         {
-            m_csc.OnKeyUp((int)arg.KeyCode, keyshift2int(arg));
+            if (m_csc != null)
+                m_csc.OnKeyUp((int)arg.KeyCode, keyshift2int(arg));
         }
 
         protected sealed override bool OnContextMenu(int x, int y)
         {
-            return m_csc.OnContextMenu(x, y);
+            if (m_csc != null)
+                return m_csc.OnContextMenu(x, y);
+            return false;
         }
 
         protected sealed override void OnRefresh(int hDC)
@@ -92,41 +99,88 @@ namespace SmoothRadiusAddin
         #region ISketchTool Members
         void ISketchTool.AddPoint(IPoint point, bool Clone, bool allowUndo)
         {
-            m_csc.AddPoint(point, Clone, allowUndo);
+            if (m_csc != null)
+                m_csc.AddPoint(point, Clone, allowUndo);
         }
 
         IPoint ISketchTool.Anchor
         {
-            get { return m_csc.Anchor; }
+            get {
+                if (m_csc != null)
+                    return m_csc.Anchor;
+                return null;
+            }
         }
 
         double ISketchTool.AngleConstraint
         {
-            get { return m_csc.AngleConstraint; }
-            set { m_csc.AngleConstraint = value; }
+            get
+            {
+                if (m_csc != null)
+                    return m_csc.AngleConstraint;
+                return 0.0;
+            }
+            set
+            {
+                if (m_csc != null)
+                    m_csc.AngleConstraint = value;
+            }
         }
 
         esriSketchConstraint ISketchTool.Constraint
         {
-            get { return m_csc.Constraint; }
-            set { m_csc.Constraint = value; }
+            get
+            {
+                if (m_csc != null)
+                    return m_csc.Constraint;
+                return esriSketchConstraint.esriConstraintNone;
+            }
+            set 
+            { 
+                if (m_csc != null)
+                    m_csc.Constraint = value; 
+            }
         }
 
         double ISketchTool.DistanceConstraint
         {
-            get { return m_csc.DistanceConstraint; }
-            set { m_csc.DistanceConstraint = value; }
+            get 
+            { 
+                if (m_csc != null)
+                    return m_csc.DistanceConstraint;
+                return 0.0;
+            }
+
+            set 
+            {
+                if (m_csc != null)
+                    m_csc.DistanceConstraint = value; 
+            }
         }
 
         bool ISketchTool.IsStreaming
         {
-            get { return m_csc.IsStreaming; }
-            set { m_csc.IsStreaming = value; }
+            get 
+            {
+                if (m_csc != null)
+                    return m_csc.IsStreaming;
+                return false;
+            }
+            set 
+            {
+                if (m_csc != null)
+                    m_csc.IsStreaming = value; 
+            }
         }
 
         IPoint ISketchTool.Location
         {
-            get { return m_csc.Location; }
+            get 
+            {
+                if (m_csc != null)
+                    return m_csc.Location;
+                return null;
+            }
         }
         #endregion
 

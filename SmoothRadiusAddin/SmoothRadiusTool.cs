@@ -297,8 +297,5 @@ namespace SmoothRadiusAddin
                 MessageBox.Show(String.Format("OnSketchFinished: Exception: {0})", exx.Message));
             }
         }
-
-
     }
-
 }
