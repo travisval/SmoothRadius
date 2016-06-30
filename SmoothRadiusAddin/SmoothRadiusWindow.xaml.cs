@@ -151,7 +151,7 @@ namespace SmoothRadiusAddin
                 }
                 catch (Exception exx)
                 {
-                    MessageBox.Show(exx.Message, "Unexpected exception");
+                    MessageBox.Show(exx.ToString(), "Unexpected exception");
                 }
                 finally
                 {

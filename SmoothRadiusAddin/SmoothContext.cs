@@ -280,21 +280,28 @@ namespace SmoothRadiusAddin
 
             if (!FabricFunctions.StartCadastralEditOperation(m_editor, m_cadFab, parcelIDs, "Smooth curves", esriCadastralFabricTable.esriCFTLines, esriCadastralFabricTable.esriCFTPoints))
                 return;
+            try
+            {
+                //Get and mean center points
+                var centerPoints = m_curves.GroupBy(w => w.CenterpointID.ToString()).Distinct().ToArray();
+                int meanCenterpointID = (centerPoints.Count() > 1) ? mergeCenterPoints(centerPoints) : m_curves[0].CenterpointID;
 
-            //Get and mean center points
-            var centerPoints = m_curves.GroupBy(w => w.CenterpointID.ToString()).Distinct().ToArray();
-            int meanCenterpointID = (centerPoints.Count() > 1) ? mergeCenterPoints(centerPoints) : m_curves[0].CenterpointID;
+                //Update lines
+                //  Update curves
+                //  Create curves from straigh segments
+                updateLines(meanCenterpointID);
 
-            //Update lines
-            //  Update curves
-            //  Create curves from straigh segments
-            updateLines(meanCenterpointID);
+                deleteOraphanedPoints(centerpointIDs);
 
-            deleteOraphanedPoints(centerpointIDs);
-            
-            FabricFunctions.RegenerateFabric(m_cadFab, parcelIDs);
+                FabricFunctions.RegenerateFabric(m_cadFab, parcelIDs);
 
-            m_editor.StopOperation("Smooth curve segments.");
+                m_editor.StopOperation("Smooth curve segments.");
+            }
+            finally
+            {
+                if (m_editor.EditState == esriEditState.esriStateEditing || m_editor.EditState == esriEditState.esriStateEditingUnfocused)
+                    m_editor.AbortOperation();
+            }
         }
 
         private int mergeCenterPoints(IGrouping<string, Line>[] centerPoints)
