@@ -327,7 +327,7 @@ namespace SmoothRadiusAddin
             try
             {
                 qFilter = new QueryFilter() { WhereClause = where };
-                cursor = m_cadPoints.Search(qFilter, true);
+                cursor = m_cadPoints.Search(qFilter, false);
 
                 while ((feature = cursor.NextFeature()) != null)
                 {

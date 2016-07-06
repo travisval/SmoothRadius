@@ -484,7 +484,7 @@ namespace SmoothRadiusAddin
                 {
                     SubFields = String.Format("{0}, {1}, {2}", linesFeatureClass.OIDFieldName, SequenceFieldName, ParcelIDFieldName),
                     WhereClause = String.Format("{0} = {1}", ParcelIDFieldName, parcelID)
-                }, true);
+                }, false);
 
                 int seqenceIdx = maxCursor.Fields.FindField(SequenceFieldName);
 
