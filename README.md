@@ -1,3 +1,3 @@
 # SmoothRadius
 
-Issue#1
+Issue [#3](/../../issues/1)
