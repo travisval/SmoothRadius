@@ -354,7 +354,7 @@ namespace SmoothRadiusAddin
             {
                 if (feature != null) Marshal.ReleaseComObject(feature);
                 if (cursor != null) Marshal.ReleaseComObject(cursor);
-                if (qFilter != null) Marshal.ReleaseComObject(qFilter);
+                //if (qFilter != null) Marshal.ReleaseComObject(qFilter);
             }
 
             double X = Math.Round(sumx / count, 6), Y = Math.Round(sumy / count, 6), Z = double.NaN;
@@ -411,6 +411,8 @@ namespace SmoothRadiusAddin
 
             IGeometry geometry = FabricFunctions.CreateNilGeometry(m_cadLines);
 
+            List<object[]> updates = new List<object[]>();
+
             IFeatureCursor insert_cursor = null;
             IFeatureBuffer insert_buffer = null;
             IFeatureCursor update_cursor = null;
@@ -446,7 +448,7 @@ namespace SmoothRadiusAddin
                             {
                                 length = ((IProximityOperator)polyline.FromPoint).ReturnDistance(polyline.ToPoint);
                                 feature.set_Value(ArcLengthFieldIndx, length);
-                                System.Runtime.InteropServices.Marshal.ReleaseComObject(polyline);
+                                //System.Runtime.InteropServices.Marshal.ReleaseComObject(polyline);
                             }
                         }
 
@@ -504,36 +506,18 @@ namespace SmoothRadiusAddin
                             feature.set_Value(RadiusFieldIdx, Value);
                         feature.set_Value(CenterpointFieldIdx, meanCenterpointID);
 
-                        //update radial lines
-                        IQueryFilter radial_filter = null;
-                        IFeatureCursor radial_cursor = null;
-                        IFeature radial_feature = null;
-                        try
-                        {
-                            radial_filter = new QueryFilter()
-                            {
-                                WhereClause = string.Format("({0} = {1} or {0} = {2}) and {3} = {4} and {5} = {6}",
+                        updates.Add(new object[] { 
+                            // where clause
+                            string.Format("({0} = {1} or {0} = {2}) and {3} = {4} and {5} = {6}",
                                            FabricFunctions.FromPointFieldName, feature.get_Value(FromPointFieldIdx), feature.get_Value(ToPointFieldIdx),
                                            FabricFunctions.ToPointFieldName, oldCenterPointID,
-                                           FabricFunctions.ParcelIDFieldName, feature.get_Value(ParcelIDFieldIdx))
-                            };
-                            radial_cursor = m_cadLines.Update(radial_filter, false);
-                            int radial_distanceIndx = radial_cursor.Fields.FindField(FabricFunctions.DistanceFieldName);
-                            int radial_toPointFieldNameIndx = radial_cursor.Fields.FindField(FabricFunctions.ToPointFieldName);
-                            while ((radial_feature = radial_cursor.NextFeature()) != null)
-                            {
-                                radial_feature.set_Value(radial_distanceIndx, Value);
-                                radial_feature.set_Value(radial_toPointFieldNameIndx, meanCenterpointID);
-                                radial_cursor.UpdateFeature(radial_feature);
-                                Marshal.ReleaseComObject(radial_feature);
-                            }
-                        }
-                        finally
-                        {
-                            if (radial_feature != null) Marshal.ReleaseComObject(radial_feature);
-                            if (radial_cursor != null) Marshal.ReleaseComObject(radial_cursor);
-                            if (radial_filter != null) Marshal.ReleaseComObject(radial_filter);
-                        }
+                                           FabricFunctions.ParcelIDFieldName, feature.get_Value(ParcelIDFieldIdx)),
+                            // distance
+                            Value,
+                            //centerpoint id
+                            meanCenterpointID
+                        });
+
                     }
                     update_cursor.UpdateFeature(feature);
                     Marshal.ReleaseComObject(feature);
@@ -545,6 +529,36 @@ namespace SmoothRadiusAddin
                 if (insert_buffer != null) Marshal.ReleaseComObject(insert_buffer);
                 if (insert_cursor != null) Marshal.ReleaseComObject(insert_cursor);
                 if (update_cursor != null) Marshal.ReleaseComObject(update_cursor);
+            }
+
+
+            //update radial lines
+
+            foreach (var values in updates)
+            {
+                IQueryFilter radial_filter = null;
+                IFeatureCursor radial_cursor = null;
+                IFeature radial_feature = null;
+                try
+                {
+                    radial_filter = new QueryFilter() { WhereClause = (string)values[0] };
+                    radial_cursor = m_cadLines.Update(radial_filter, false);
+                    int radial_distanceIndx = radial_cursor.Fields.FindField(FabricFunctions.DistanceFieldName);
+                    int radial_toPointFieldNameIndx = radial_cursor.Fields.FindField(FabricFunctions.ToPointFieldName);
+                    while ((radial_feature = radial_cursor.NextFeature()) != null)
+                    {
+                        radial_feature.set_Value(radial_distanceIndx, values[1]);
+                        radial_feature.set_Value(radial_toPointFieldNameIndx, values[2]);
+                        radial_cursor.UpdateFeature(radial_feature);
+                        Marshal.ReleaseComObject(radial_feature);
+                    }
+                }
+                finally
+                {
+                    if (radial_feature != null) Marshal.ReleaseComObject(radial_feature);
+                    if (radial_cursor != null) Marshal.ReleaseComObject(radial_cursor);
+                    //if (radial_filter != null) Marshal.ReleaseComObject(radial_filter);
+                }
             }
         }
 
@@ -584,7 +598,7 @@ namespace SmoothRadiusAddin
             {
                 if (row != null) Marshal.ReleaseComObject(row);
                 if (cursor != null) Marshal.ReleaseComObject(cursor);
-                if (qFilter != null) Marshal.ReleaseComObject(qFilter);
+                //if (qFilter != null) Marshal.ReleaseComObject(qFilter);
             }
 
             if (allIds.Count > 0)
